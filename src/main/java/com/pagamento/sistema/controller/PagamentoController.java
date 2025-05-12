@@ -6,26 +6,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/Pagamentos")
+@RequestMapping("/pagamentos")
 public class PagamentoController {
 
     @Autowired
-    PagamentoService PagamentoService;
+    PagamentoService pagamentoService;
 
-    @GetMapping("/{id}")
+    @GetMapping("/{cpf}")
     public ResponseEntity<Pagamento> encontrarPagamento(@PathVariable String cpf) {
-        Optional<Pagamento> Pagamento = PagamentoService.encontrarPagamento(cpf);
-        return Pagamento.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        Optional<Pagamento> pagamento = pagamentoService.encontrarPagamento(cpf);
+        if (pagamento.isPresent()) {
+            return ResponseEntity.ok(pagamento.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @GetMapping("/todos")
     public ResponseEntity<List<Pagamento>> encontrarPagamentos() {
-        List<Pagamento> Pagamentos = PagamentoService.encontrarPagamentos();
+        List<Pagamento> Pagamentos = pagamentoService.encontrarPagamentos();
         if (Pagamentos.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
@@ -33,31 +39,37 @@ public class PagamentoController {
     }
 
     @PostMapping("/cadastrar")
-    public ResponseEntity<Pagamento> cadastrarPagamento(@RequestBody Pagamento Pagamento) {
+    public ResponseEntity<Pagamento> cadastrarPagamento(@RequestBody Pagamento pagamento) {
         try {
-            Pagamento PagamentoCadastrado = PagamentoService.cadastrarPagamento(Pagamento);
-            return ResponseEntity.ok(PagamentoCadastrado);
-        } catch(Exception e) {
+            Pagamento pagamentoCadastrado = pagamentoService.cadastrarPagamento(pagamento);
+            URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
+                    .path("/{cpf}")
+                    .buildAndExpand(pagamentoCadastrado.getCpf())
+                    .toUri();
+            return ResponseEntity.created(uri).body(pagamentoCadastrado);
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
     @PutMapping("/alterar")
-    public ResponseEntity<Pagamento> alterarPagamento(@RequestBody Pagamento Pagamento) {
-        try {
-            Pagamento PagamentoAlterado = PagamentoService.alterarPagamento(Pagamento);
-            return ResponseEntity.ok(PagamentoAlterado);
-        } catch(Exception e) {
+    public ResponseEntity<Pagamento> alterarPagamento(@RequestBody Pagamento pagamento) {
+        Optional<Pagamento> pagamentoVerificado = pagamentoService.encontrarPagamento(pagamento.getCpf());
+        if (pagamentoVerificado.isPresent()) {
+            Pagamento pagamentoAlterado = pagamentoService.alterarPagamento(pagamento);
+            return ResponseEntity.ok(pagamentoAlterado);
+        } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
-    @DeleteMapping("/deletar/{cpf}")
+    @DeleteMapping("/{cpf}")
     public ResponseEntity<Pagamento> deletarPagamento(@PathVariable String cpf) {
-        try {
-            PagamentoService.deletarPagamento(cpf);
-            return ResponseEntity.ok().build();
-        } catch(Exception e) {
+        Optional<Pagamento> pagamento = pagamentoService.encontrarPagamento(cpf);
+        if (pagamento.isPresent()) {
+            pagamentoService.deletarPagamento(cpf);
+            return ResponseEntity.noContent().build();
+        } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
