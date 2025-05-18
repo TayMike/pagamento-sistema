@@ -11,8 +11,8 @@
 	<groupId>com.example</groupId>
 	<artifactId>pagamento-sistema</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>produtos</name>
-	<description>Produtos para gerenciamento de um restaurante</description>
+	<name>pagamentos</name>
+	<description>Pagamentos para gerenciamento de um restaurante</description>
 	<url/>
 	<licenses>
 		<license/>
